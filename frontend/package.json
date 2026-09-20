@@ -1,0 +1,38 @@
+{
+  "name": "pulseaid-frontend",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "PulseAid frontend — real-time emergency blood response network UI (React + Vite + Tailwind)",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "lint": "oxlint",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@hookform/resolvers": "^5.9.1",
+    "@tailwindcss/vite": "^4.3.3",
+    "axios": "^1.20.0",
+    "clsx": "^2.1.1",
+    "date-fns": "^4.4.0",
+    "framer-motion": "^13.4.0",
+    "leaflet": "^1.9.4",
+    "lucide-react": "^1.46.0",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "react-hook-form": "^7.88.0",
+    "react-hot-toast": "^2.6.1",
+    "react-leaflet": "^5.0.0",
+    "react-router-dom": "^7.18.4",
+    "socket.io-client": "^4.8.3",
+    "tailwind-merge": "^3.7.0",
+    "tailwindcss": "^4.3.3",
+    "zod": "^4.6.5",
+    "zustand": "^5.0.15"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^6.1.1",
+    "vite": "^8.3.0"
+  }
+}
