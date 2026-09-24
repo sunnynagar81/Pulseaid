@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import Match from "../models/Match.js";
 import BloodRequest from "../models/BloodRequest.js";
+import Donor from "../models/Donor.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError, ok } from "../utils/apiResponse.js";
 import { getIO } from "../sockets/socketHandler.js";
@@ -42,6 +43,16 @@ export const respondToMatch = asyncHandler(async (req, res) => {
             ? "fulfilled"
             : "partially_fulfilled";
         await bloodRequest.save({ session });
+
+        // A donor who has accepted is now committed to this request and
+        // should not be pulled into a new, unrelated match while that
+        // commitment is still open. isAvailable is what the matching
+        // engine already filters on (both the Mongo geo query and the
+        // Neo4j Cypher query), so pausing it here is enough to stop
+        // further alerts without touching the matching logic itself.
+        // The donor can flip themselves back to "Available" from their
+        // dashboard whenever they're free again.
+        await Donor.findByIdAndUpdate(req.user._id, { isAvailable: false }, { session });
       }
 
       updatedMatch = match;
@@ -51,7 +62,6 @@ export const respondToMatch = asyncHandler(async (req, res) => {
     await session.endSession();
   }
 
-  // Live-update the hospital dashboard the moment a donor responds.
   const io = getIO();
   io.to(`hospital:${updatedRequest.hospital}`).emit("match-updated", {
     requestId: updatedRequest._id,

@@ -48,11 +48,12 @@ export const getEligibility = asyncHandler(async (req, res) => {
 export const recordDonation = asyncHandler(async (req, res) => {
   const donor = await Donor.findByIdAndUpdate(
     req.user._id,
-    { lastDonationDate: new Date(), $inc: { totalDonations: 1 } },
+    { lastDonationDate: new Date(), isAvailable: true, $inc: { totalDonations: 1 } },
     { new: true }
   );
   return ok(res, donor, "Donation recorded — thank you!");
 });
+
 
 export const getMyMatches = asyncHandler(async (req, res) => {
   const matches = await Match.find({ donor: req.user._id })
