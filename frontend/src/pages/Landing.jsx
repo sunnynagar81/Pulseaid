@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   HeartPulse,
@@ -13,6 +14,8 @@ import {
 } from "lucide-react";
 import { Button } from "../components/ui/Button";
 import { Card } from "../components/ui/Card";
+import { AccordionItem } from "../components/ui/Accordion";
+import { getPublicStats } from "../api/stats";
 
 const STATS = [
   { n: "4.5 Cr+", d: "units of blood needed annually in India" },
@@ -34,7 +37,40 @@ const FEATURES = [
   { icon: Users, t: "Built for both sides", d: "Purpose-built dashboards for donors and hospitals, not one generic view" },
 ];
 
+const MYTHS = [
+  {
+    q: "Does donating blood make you weak?",
+    a: "Myth. Your body replenishes the fluid lost within 24 hours, and red blood cells within a few weeks. A healthy adult donates less than 15% of total blood volume — most people feel completely normal within a short rest.",
+  },
+  {
+    q: "Do you need to be an athlete or very fit to donate?",
+    a: "Myth. Any healthy adult aged 18–65, weighing over 50kg, with normal hemoglobin levels can donate. No special fitness level is required.",
+  },
+  {
+    q: "Is donating blood painful and time-consuming?",
+    a: "Myth. The actual donation takes about 10–15 minutes, and the needle pinch lasts only a second or two — similar to a routine blood test.",
+  },
+  {
+    q: "Can diabetics or people with controlled blood pressure donate?",
+    a: "Often yes. Most people with well-controlled diabetes or blood pressure, managed with medication, are eligible to donate — a quick health screening before donation confirms this.",
+  },
+  {
+    q: "Can you donate blood as often as you want?",
+    a: "No — and this is exactly why PulseAid tracks eligibility automatically. Donors must wait at least 90 days between donations, so the body has time to fully recover.",
+  },
+  {
+    q: "Can donating blood give you a disease?",
+    a: "No. Every needle and collection kit is sterile and used only once, then discarded. There is zero risk of infection to the donor.",
+  },
+];
+
 export default function Landing() {
+  const [liveStats, setLiveStats] = useState(null);
+
+  useEffect(() => {
+    getPublicStats().then(({ data }) => setLiveStats(data)).catch(() => {});
+  }, []);
+
   return (
     <div className="min-h-screen bg-white">
       <nav className="border-b border-ink-200">
@@ -130,6 +166,42 @@ export default function Landing() {
           ))}
         </div>
       </section>
+
+      <section className="bg-ink-50 py-16">
+        <div className="max-w-3xl mx-auto px-6">
+          <h2 className="text-center font-display text-2xl font-semibold text-ink-900 mb-3">Myths vs Facts</h2>
+          <p className="text-center text-ink-500 mb-10">
+            Hesitant about donating? Here's what's actually true.
+          </p>
+          <div className="space-y-3">
+            {MYTHS.map((m) => (
+              <AccordionItem key={m.q} question={m.q} answer={m.a} />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {liveStats && (
+        <section className="py-14">
+          <div className="max-w-4xl mx-auto px-6 text-center">
+            <h2 className="font-display text-xl font-semibold text-ink-900 mb-8">Live on PulseAid right now</h2>
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <p className="font-display text-3xl font-bold text-teal-700">{liveStats.totalDonors}</p>
+                <p className="text-sm text-ink-500 mt-1">Registered donors</p>
+              </div>
+              <div>
+                <p className="font-display text-3xl font-bold text-teal-700">{liveStats.fulfilledRequests}</p>
+                <p className="text-sm text-ink-500 mt-1">Requests fulfilled</p>
+              </div>
+              <div>
+                <p className="font-display text-3xl font-bold text-coral-500">{liveStats.livesImpacted}</p>
+                <p className="text-sm text-ink-500 mt-1">Lives potentially impacted</p>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
 
       <section className="bg-teal-800 text-white py-16">
         <div className="max-w-2xl mx-auto px-6 text-center">

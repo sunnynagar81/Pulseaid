@@ -7,6 +7,7 @@ import { Button } from "../../components/ui/Button";
 import { Spinner } from "../../components/ui/Spinner";
 import { RequestCard } from "../../components/RequestCard";
 import { NewRequestModal } from "../../components/NewRequestModal";
+import { RequestMatchesModal } from "../../components/RequestMatchesModal";
 import { useSocket } from "../../contexts/SocketContext";
 import { getDashboard } from "../../api/hospitals";
 
@@ -14,6 +15,7 @@ export default function HospitalRequests() {
   const { socket } = useSocket();
   const [requests, setRequests] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [viewingRequestId, setViewingRequestId] = useState(null);
 
   const load = () => getDashboard().then(({ data }) => setRequests(data.requests));
 
@@ -71,11 +73,19 @@ export default function HospitalRequests() {
         </Card>
       ) : (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {requests.map((r) => <RequestCard key={r._id} request={r} />)}
+          {requests.map((r) => (
+            <RequestCard key={r._id} request={r} onViewDonors={setViewingRequestId} />
+          ))}
         </div>
       )}
 
       <NewRequestModal open={modalOpen} onClose={() => setModalOpen(false)} onCreated={() => { setModalOpen(false); load(); }} />
+
+      <RequestMatchesModal
+        open={!!viewingRequestId}
+        requestId={viewingRequestId}
+        onClose={() => setViewingRequestId(null)}
+      />
     </DashboardLayout>
   );
 }

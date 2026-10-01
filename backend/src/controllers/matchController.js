@@ -73,3 +73,58 @@ export const respondToMatch = asyncHandler(async (req, res) => {
 
   return ok(res, updatedMatch, `Response recorded: ${response}`);
 });
+
+// Hospital-only: confirms a donor's accepted match actually resulted in
+// a real donation. This is intentionally separate from respondToMatch —
+// a donor accepting means "I'm willing," a hospital confirming means
+// "this genuinely happened." Only the hospital's confirmation resets
+// the donor's 90-day eligibility clock and their public donation count,
+// so the platform's impact numbers stay honest.
+export const confirmDonation = asyncHandler(async (req, res) => {
+  const session = await mongoose.startSession();
+  let updatedMatch, donorId, newTotalDonations;
+
+  try {
+    await session.withTransaction(async () => {
+      const match = await Match.findById(req.params.id).session(session);
+      if (!match) throw new ApiError(404, "Match not found");
+
+      const bloodRequest = await BloodRequest.findById(match.request).session(session);
+      if (!bloodRequest || bloodRequest.hospital.toString() !== req.user._id.toString()) {
+        throw new ApiError(403, "This match does not belong to one of your requests");
+      }
+
+      if (match.status !== "accepted") {
+        throw new ApiError(409, `Cannot confirm a match that is currently "${match.status}"`);
+      }
+
+      match.status = "completed";
+      match.completedAt = new Date();
+      await match.save({ session });
+
+      const donor = await Donor.findByIdAndUpdate(
+        match.donor,
+        { lastDonationDate: new Date(), isAvailable: true, $inc: { totalDonations: 1 } },
+        { new: true, session }
+      );
+
+      updatedMatch = match;
+      donorId = donor._id;
+      newTotalDonations = donor.totalDonations;
+    });
+  } finally {
+    await session.endSession();
+  }
+
+  // Notify the donor live — this is the actual "you helped save lives"
+  // moment, coming from the hospital's confirmation, not self-reported.
+  const io = getIO();
+  io.to(`donor:${donorId}`).emit("donation-confirmed", {
+    matchId: updatedMatch._id,
+    hospitalName: req.user.name,
+    totalDonations: newTotalDonations,
+    livesImpacted: newTotalDonations * 3,
+  });
+
+  return ok(res, updatedMatch, "Donation confirmed");
+});

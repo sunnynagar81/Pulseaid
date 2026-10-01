@@ -8,6 +8,7 @@ import { Toggle } from "../../components/ui/Toggle";
 import { Spinner } from "../../components/ui/Spinner";
 import { MatchCard } from "../../components/MatchCard";
 import { CoverageMap } from "../../components/CoverageMap";
+import { ImpactModal } from "../../components/ImpactModal";
 import { useAuthStore } from "../../store/authStore";
 import { useSocket } from "../../contexts/SocketContext";
 import { getEligibility, updateAvailability, getMyMatches } from "../../api/donors";
@@ -20,6 +21,7 @@ export default function DonorDashboard() {
   const [available, setAvailable] = useState(user?.isAvailable ?? true);
   const [matches, setMatches] = useState(null);
   const [togglingAvailability, setTogglingAvailability] = useState(false);
+  const [impactData, setImpactData] = useState(null);
 
   useEffect(() => {
     getEligibility().then(({ data }) => setEligibility(data)).catch(() => {});
@@ -61,6 +63,20 @@ export default function DonorDashboard() {
 
     socket.on("new-alert", handleNewAlert);
     return () => socket.off("new-alert", handleNewAlert);
+  }, [socket]);
+
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleDonationConfirmed = (payload) => {
+      setImpactData(payload);
+      setMatches((prev) =>
+        (prev || []).map((m) => (m._id === payload.matchId ? { ...m, status: "completed" } : m))
+      );
+    };
+
+    socket.on("donation-confirmed", handleDonationConfirmed);
+    return () => socket.off("donation-confirmed", handleDonationConfirmed);
   }, [socket]);
 
   const handleToggleAvailability = async (next) => {
@@ -151,6 +167,12 @@ export default function DonorDashboard() {
           </div>
         </section>
       )}
+
+      <ImpactModal
+        open={!!impactData}
+        onClose={() => setImpactData(null)}
+        totalDonations={impactData?.totalDonations ?? 0}
+      />
     </DashboardLayout>
   );
 }

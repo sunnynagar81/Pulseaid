@@ -7,6 +7,7 @@ import { Button } from "../../components/ui/Button";
 import { Spinner } from "../../components/ui/Spinner";
 import { RequestCard } from "../../components/RequestCard";
 import { NewRequestModal } from "../../components/NewRequestModal";
+import { RequestMatchesModal } from "../../components/RequestMatchesModal";
 import { CoverageMap } from "../../components/CoverageMap";
 import { useSocket } from "../../contexts/SocketContext";
 import { getDashboard } from "../../api/hospitals";
@@ -17,6 +18,7 @@ export default function HospitalDashboard() {
   const user = useAuthStore((s) => s.user);
   const [data, setData] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [viewingRequestId, setViewingRequestId] = useState(null);
 
   const loadDashboard = () => getDashboard().then(({ data }) => setData(data));
 
@@ -115,11 +117,26 @@ export default function HospitalDashboard() {
         </Card>
       ) : (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {data.requests.map((r) => <RequestCard key={r._id} request={r} />)}
+          {data.requests.map((r) => (
+            <RequestCard key={r._id} request={r} onViewDonors={setViewingRequestId} />
+          ))}
         </div>
       )}
 
-      <NewRequestModal open={modalOpen} onClose={() => setModalOpen(false)} onCreated={() => { setModalOpen(false); loadDashboard(); }} />
+      <NewRequestModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onCreated={() => {
+          setModalOpen(false);
+          loadDashboard();
+        }}
+      />
+
+      <RequestMatchesModal
+        open={!!viewingRequestId}
+        requestId={viewingRequestId}
+        onClose={() => setViewingRequestId(null)}
+      />
     </DashboardLayout>
   );
 }

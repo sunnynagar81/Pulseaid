@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Hospital, MapPin, Clock, Check, X } from "lucide-react";
+import { Hospital, MapPin, Clock, Check, X, Award } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import toast from "react-hot-toast";
 import { Card } from "./ui/Card";
@@ -8,15 +8,11 @@ import { Button } from "./ui/Button";
 import { respondToMatch } from "../api/matches";
 
 const URGENCY_VARIANT = { critical: "red", urgent: "coral", scheduled: "gray" };
+const STATUS_LABEL = { accepted: "You accepted", declined: "Declined", completed: "Donation confirmed" };
 
-/**
- * One alert card. Holds its own local "responding" state so the two
- * buttons disable independently and swap to a result badge the instant
- * the API confirms — no need to refetch the whole list for one card.
- */
 export function MatchCard({ match, onResponded }) {
   const [status, setStatus] = useState(match.status);
-  const [responding, setResponding] = useState(null); // "accepted" | "declined" | null
+  const [responding, setResponding] = useState(null);
 
   const request = match.request;
   const hospitalName = request?.hospital?.name || "Hospital";
@@ -96,8 +92,9 @@ export function MatchCard({ match, onResponded }) {
         </div>
       ) : (
         <div className="mt-4">
-          <Badge variant={status === "accepted" ? "teal" : "gray"}>
-            {status === "accepted" ? "You accepted" : "Declined"}
+          <Badge variant={status === "completed" ? "teal" : status === "accepted" ? "coral" : "gray"}>
+            {status === "completed" && <Award className="h-3 w-3 inline mr-1" />}
+            {STATUS_LABEL[status] || status}
           </Badge>
         </div>
       )}

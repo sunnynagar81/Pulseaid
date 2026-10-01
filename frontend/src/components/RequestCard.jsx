@@ -1,7 +1,8 @@
-import { Droplet, Users, CheckCircle2, XCircle, Clock } from "lucide-react";
+import { Droplet, Users, CheckCircle2, XCircle, Clock, Eye } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { Card } from "./ui/Card";
 import { Badge } from "./ui/Badge";
+import { Button } from "./ui/Button";
 import { cn } from "../lib/cn";
 
 const URGENCY_VARIANT = { critical: "red", urgent: "coral", scheduled: "gray" };
@@ -20,7 +21,7 @@ const STATUS_LABEL = {
   cancelled: "Cancelled",
 };
 
-export function RequestCard({ request }) {
+export function RequestCard({ request, onViewDonors }) {
   const progress = Math.min(100, (request.unitsConfirmed / request.unitsNeeded) * 100);
   const stats = request.stats || { notified: 0, accepted: 0, declined: 0 };
 
@@ -76,6 +77,16 @@ export function RequestCard({ request }) {
           Posted {formatDistanceToNow(new Date(request.createdAt), { addSuffix: true })}
         </p>
       )}
+
+      <Button
+        size="sm"
+        variant="outline"
+        className="w-full mt-4"
+        onClick={() => onViewDonors?.(request._id)}
+      >
+        <Eye className="h-4 w-4" />
+        View Donors
+      </Button>
     </Card>
   );
 }

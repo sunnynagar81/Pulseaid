@@ -11,6 +11,7 @@ import matchRoutes from "./routes/matchRoutes.js";
 
 import { apiLimiter } from "./middleware/rateLimiter.js";
 import { notFoundHandler, errorHandler } from "./middleware/errorHandler.js";
+import statsRoutes from "./routes/statsRoutes.js";
 
 const app = express();
 
@@ -37,5 +38,6 @@ app.use("/api/matches", matchRoutes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);
+app.use("/api/stats", statsRoutes);
 
 export default app;
