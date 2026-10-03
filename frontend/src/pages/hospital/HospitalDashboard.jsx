@@ -12,6 +12,7 @@ import { CoverageMap } from "../../components/CoverageMap";
 import { useSocket } from "../../contexts/SocketContext";
 import { getDashboard } from "../../api/hospitals";
 import { useAuthStore } from "../../store/authStore";
+import { SkeletonRequestCard, SkeletonStatCard } from "../../components/ui/Skeleton";
 
 export default function HospitalDashboard() {
   const { socket } = useSocket();
@@ -72,10 +73,19 @@ export default function HospitalDashboard() {
     };
   }, [socket]);
 
-  if (!data) {
+    if (!data) {
     return (
       <DashboardLayout title="Dashboard">
-        <div className="flex justify-center py-20"><Spinner /></div>
+        <div className="grid grid-cols-3 gap-4 max-w-xl mb-8">
+          <SkeletonStatCard />
+          <SkeletonStatCard />
+          <SkeletonStatCard />
+        </div>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <SkeletonRequestCard />
+          <SkeletonRequestCard />
+          <SkeletonRequestCard />
+        </div>
       </DashboardLayout>
     );
   }

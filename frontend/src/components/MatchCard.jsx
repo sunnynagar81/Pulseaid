@@ -6,6 +6,8 @@ import { Card } from "./ui/Card";
 import { Badge } from "./ui/Badge";
 import { Button } from "./ui/Button";
 import { respondToMatch } from "../api/matches";
+import { motion } from "framer-motion";
+
 
 const URGENCY_VARIANT = { critical: "red", urgent: "coral", scheduled: "gray" };
 const STATUS_LABEL = { accepted: "You accepted", declined: "Declined", completed: "Donation confirmed" };
@@ -33,7 +35,17 @@ export function MatchCard({ match, onResponded }) {
   };
 
   return (
-    <Card className="p-5">
+        <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.25 }}
+    >
+        <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.25 }}
+    >
+    <Card className="p-5" hoverable>
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-start gap-3 min-w-0">
           <div className="h-10 w-10 rounded-lg bg-navy-700/10 text-navy-700 flex items-center justify-center shrink-0">
@@ -98,6 +110,8 @@ export function MatchCard({ match, onResponded }) {
           </Badge>
         </div>
       )}
-    </Card>
+        </Card>
+       </motion.div>
+     </motion.div>
   );
 }

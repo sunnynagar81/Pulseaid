@@ -6,6 +6,7 @@ import { DashboardLayout } from "../../components/layout/DashboardLayout";
 import { Card } from "../../components/ui/Card";
 import { Toggle } from "../../components/ui/Toggle";
 import { Spinner } from "../../components/ui/Spinner";
+import { Skeleton, SkeletonMatchCard } from "../../components/ui/Skeleton";
 import { MatchCard } from "../../components/MatchCard";
 import { CoverageMap } from "../../components/CoverageMap";
 import { ImpactModal } from "../../components/ImpactModal";
@@ -139,7 +140,11 @@ export default function DonorDashboard() {
         </h2>
 
         {matches === null ? (
-          <div className="flex justify-center py-10"><Spinner /></div>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <SkeletonMatchCard />
+            <SkeletonMatchCard />
+            <SkeletonMatchCard />
+          </div>
         ) : activeAlerts.length === 0 ? (
           <EmptyState text="No active alerts right now — you'll be notified instantly when a nearby request matches your blood type." />
         ) : (
@@ -180,8 +185,9 @@ export default function DonorDashboard() {
 function EligibilityCard({ eligibility }) {
   if (!eligibility) {
     return (
-      <Card className="p-5 flex items-center justify-center">
-        <Spinner />
+      <Card className="p-5">
+        <Skeleton className="h-3 w-24 mb-3" />
+        <Skeleton className="h-6 w-32" />
       </Card>
     );
   }

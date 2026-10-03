@@ -64,7 +64,7 @@
 
 @layer utilities {
   .glass {
-    @apply bg-white/80 backdrop-blur-xl border border-white/60;
+    @apply bg-white/90 backdrop-blur-sm border border-white/60;
   }
 
   .focus-ring {

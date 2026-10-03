@@ -10,6 +10,7 @@ import { NewRequestModal } from "../../components/NewRequestModal";
 import { RequestMatchesModal } from "../../components/RequestMatchesModal";
 import { useSocket } from "../../contexts/SocketContext";
 import { getDashboard } from "../../api/hospitals";
+import { SkeletonRequestCard } from "../../components/ui/Skeleton";
 
 export default function HospitalRequests() {
   const { socket } = useSocket();
@@ -58,8 +59,12 @@ export default function HospitalRequests() {
         </Button>
       </div>
 
-      {requests === null ? (
-        <div className="flex justify-center py-20"><Spinner /></div>
+            {requests === null ? (
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <SkeletonRequestCard />
+          <SkeletonRequestCard />
+          <SkeletonRequestCard />
+        </div>
       ) : requests.length === 0 ? (
         <Card className="p-10 flex flex-col items-center text-center">
           <div className="h-12 w-12 rounded-full bg-ink-100 flex items-center justify-center mb-3">

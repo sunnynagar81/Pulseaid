@@ -16,6 +16,7 @@ import { Button } from "../components/ui/Button";
 import { Card } from "../components/ui/Card";
 import { AccordionItem } from "../components/ui/Accordion";
 import { getPublicStats } from "../api/stats";
+import { useCountUp } from "../hooks/useCountUp";
 
 const STATS = [
   { n: "4.5 Cr+", d: "units of blood needed annually in India" },
@@ -186,18 +187,9 @@ export default function Landing() {
           <div className="max-w-4xl mx-auto px-6 text-center">
             <h2 className="font-display text-xl font-semibold text-ink-900 mb-8">Live on PulseAid right now</h2>
             <div className="grid grid-cols-3 gap-4">
-              <div>
-                <p className="font-display text-3xl font-bold text-teal-700">{liveStats.totalDonors}</p>
-                <p className="text-sm text-ink-500 mt-1">Registered donors</p>
-              </div>
-              <div>
-                <p className="font-display text-3xl font-bold text-teal-700">{liveStats.fulfilledRequests}</p>
-                <p className="text-sm text-ink-500 mt-1">Requests fulfilled</p>
-              </div>
-              <div>
-                <p className="font-display text-3xl font-bold text-coral-500">{liveStats.livesImpacted}</p>
-                <p className="text-sm text-ink-500 mt-1">Lives potentially impacted</p>
-              </div>
+              <LiveStat value={liveStats.totalDonors} label="Registered donors" color="text-teal-700" />
+              <LiveStat value={liveStats.fulfilledRequests} label="Requests fulfilled" color="text-teal-700" />
+              <LiveStat value={liveStats.livesImpacted} label="Lives potentially impacted" color="text-coral-500" />
             </div>
           </div>
         </section>
@@ -224,6 +216,16 @@ export default function Landing() {
           <span>Every Pulse Connected, Every Life Protected</span>
         </div>
       </footer>
+    </div>
+  );
+}
+
+function LiveStat({ value, label, color }) {
+  const animated = useCountUp(value);
+  return (
+    <div>
+      <p className={`font-display text-3xl font-bold ${color}`}>{animated}</p>
+      <p className="text-sm text-ink-500 mt-1">{label}</p>
     </div>
   );
 }

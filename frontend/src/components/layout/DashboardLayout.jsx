@@ -13,7 +13,10 @@ import {
 } from "lucide-react";
 import { useAuthStore } from "../../store/authStore";
 import { useSocket } from "../../contexts/SocketContext";
+import { AppBackground } from "../AppBackground";
 import { cn } from "../../lib/cn";
+import { useLocation } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
 
 const DONOR_NAV = [
   { to: "/donor", label: "Dashboard", icon: LayoutDashboard, end: true },
@@ -27,23 +30,18 @@ const HOSPITAL_NAV = [
   { to: "/hospital/profile", label: "Profile", icon: User },
 ];
 
-/**
- * Shared shell for every authenticated screen: sidebar nav (role-aware),
- * top bar with a live socket connection indicator, and a scrollable
- * content area. Every real page (dashboards, alerts, profile) renders
- * as `children` inside this — it's the difference between a set of
- * disconnected pages and something that feels like one cohesive app.
- */
 export function DashboardLayout({ children, title }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { user, role, logout } = useAuthStore();
   const { connected } = useSocket();
 
   const navItems = role === "donor" ? DONOR_NAV : HOSPITAL_NAV;
+  const location = useLocation();
 
   return (
-    <div className="min-h-screen bg-ink-50 flex">
-      {/* Mobile overlay */}
+    <div className="min-h-screen flex relative">
+      <AppBackground />
+
       {sidebarOpen && (
         <div
           className="fixed inset-0 bg-black/30 z-30 lg:hidden"
@@ -53,13 +51,13 @@ export function DashboardLayout({ children, title }) {
 
       <aside
         className={cn(
-          "fixed lg:sticky top-0 left-0 h-screen w-64 bg-white border-r border-ink-200 z-40 flex flex-col transition-transform duration-200 lg:translate-x-0",
+          "fixed lg:sticky top-0 left-0 h-screen w-64 glass z-40 flex flex-col transition-transform duration-200 lg:translate-x-0",
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
-        <div className="h-16 flex items-center justify-between px-5 border-b border-ink-200">
+        <div className="h-16 flex items-center justify-between px-5 border-b border-white/50">
           <div className="flex items-center gap-2.5">
-            <div className="h-8 w-8 rounded-lg bg-teal-700 flex items-center justify-center shrink-0">
+            <div className="h-8 w-8 rounded-lg bg-teal-700 flex items-center justify-center shrink-0 shadow-soft">
               <HeartPulse className="h-4.5 w-4.5 text-white" />
             </div>
             <span className="font-display font-semibold text-ink-900">PulseAid</span>
@@ -77,10 +75,10 @@ export function DashboardLayout({ children, title }) {
               end={end}
               className={({ isActive }) =>
                 cn(
-                  "flex items-center gap-3 px-3 h-10 rounded-lg text-sm font-medium transition-colors",
+                  "flex items-center gap-3 px-3 h-10 rounded-lg text-sm font-medium transition-all duration-150",
                   isActive
-                    ? "bg-teal-50 text-teal-800"
-                    : "text-ink-600 hover:bg-ink-100 hover:text-ink-900"
+                    ? "bg-teal-700 text-white shadow-soft"
+                    : "text-ink-600 hover:bg-white/70 hover:text-teal-800 hover:translate-x-0.5"
                 )
               }
             >
@@ -90,7 +88,7 @@ export function DashboardLayout({ children, title }) {
           ))}
         </nav>
 
-        <div className="p-3 border-t border-ink-200">
+        <div className="p-3 border-t border-white/50">
           <div className="flex items-center gap-2.5 px-2 py-2 mb-1">
             <div className="h-8 w-8 rounded-full bg-navy-700 text-white flex items-center justify-center text-xs font-semibold shrink-0">
               {user?.name?.[0]?.toUpperCase() || "?"}
@@ -102,7 +100,7 @@ export function DashboardLayout({ children, title }) {
           </div>
           <button
             onClick={logout}
-            className="w-full flex items-center gap-3 px-3 h-9 rounded-lg text-sm font-medium text-ink-500 hover:bg-red-50 hover:text-red-600 transition-colors"
+            className="w-full flex items-center gap-3 px-3 h-9 rounded-lg text-sm font-medium text-ink-500 hover:bg-red-50 hover:text-red-600 transition-colors duration-150"
           >
             <LogOut className="h-4 w-4" />
             Log out
@@ -111,7 +109,7 @@ export function DashboardLayout({ children, title }) {
       </aside>
 
       <div className="flex-1 min-w-0 flex flex-col">
-        <header className="h-16 bg-white border-b border-ink-200 flex items-center justify-between px-4 lg:px-8 sticky top-0 z-20">
+        <header className="h-16 glass flex items-center justify-between px-4 lg:px-8 sticky top-0 z-20">
           <div className="flex items-center gap-3">
             <button className="lg:hidden text-ink-600" onClick={() => setSidebarOpen(true)}>
               <Menu className="h-5 w-5" />
@@ -121,7 +119,7 @@ export function DashboardLayout({ children, title }) {
 
           <div
             className={cn(
-              "flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full",
+              "flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full transition-colors duration-200",
               connected ? "bg-teal-100 text-teal-700" : "bg-ink-100 text-ink-500"
             )}
             title={connected ? "Live connection active" : "Reconnecting…"}
@@ -131,7 +129,19 @@ export function DashboardLayout({ children, title }) {
           </div>
         </header>
 
-        <main className="flex-1 p-4 lg:p-8">{children}</main>
+                <main className="flex-1 p-4 lg:p-8">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={location.pathname}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.2 }}
+            >
+              {children}
+            </motion.div>
+          </AnimatePresence>
+        </main>
       </div>
     </div>
   );
