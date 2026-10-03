@@ -75,11 +75,17 @@ export const login = asyncHandler(async (req, res) => {
 
   setAuthCookies(res, accessToken, refreshToken);
 
-  return ok(res, { user: sanitize(user), accessToken }, "Logged in successfully");
+  // Tokens also returned in the response body, not just as cookies —
+  // mobile browsers (Safari especially, and in-app browsers like
+  // WhatsApp/Instagram's webview) frequently block cross-site cookies
+  // even with correct SameSite/Secure settings. The frontend falls
+  // back to storing these and sending them manually when cookies fail.
+  return ok(res, { user: sanitize(user), accessToken, refreshToken }, "Logged in successfully");
 });
 
 export const refreshAccessToken = asyncHandler(async (req, res) => {
-  const token = req.cookies?.refreshToken;
+  // Cookie first, body as fallback — same reasoning as login above.
+  const token = req.cookies?.refreshToken || req.body?.refreshToken;
   if (!token) throw new ApiError(401, "No refresh token provided");
 
   let payload;
