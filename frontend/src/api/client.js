@@ -3,14 +3,38 @@ import axios from "axios";
 export const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 export const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || "http://localhost:5000";
 
-/**
- * withCredentials: true is required — our backend sends the JWT as an
- * httpOnly cookie (not a header), so the browser needs to be told to
- * send/receive cookies on cross-origin requests to the API.
- */
+const ACCESS_KEY = "pulseaid_access_token";
+const REFRESH_KEY = "pulseaid_refresh_token";
+
+export const tokenStorage = {
+  getAccess: () => localStorage.getItem(ACCESS_KEY),
+  getRefresh: () => localStorage.getItem(REFRESH_KEY),
+  set: (accessToken, refreshToken) => {
+    if (accessToken) localStorage.setItem(ACCESS_KEY, accessToken);
+    if (refreshToken) localStorage.setItem(REFRESH_KEY, refreshToken);
+  },
+  clear: () => {
+    localStorage.removeItem(ACCESS_KEY);
+    localStorage.removeItem(REFRESH_KEY);
+  },
+};
+
 export const api = axios.create({
   baseURL: API_URL,
   withCredentials: true,
+});
+
+// Attach the token manually on every request — this is what actually
+// makes auth work on mobile browsers (Safari, in-app webviews) that
+// block the cross-site cookie. On desktop the cookie still works fine;
+// this header is just a second, more reliable path that works
+// everywhere.
+api.interceptors.request.use((config) => {
+  const token = tokenStorage.getAccess();
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
 });
 
 let isRefreshing = false;
@@ -21,12 +45,6 @@ function resolveQueue(error) {
   pendingQueue = [];
 }
 
-/**
- * On a 401, try exactly one silent refresh (via /auth/refresh, which
- * reads the refreshToken cookie) and replay the original request.
- * If a refresh is already in-flight, subsequent 401s queue and wait
- * for it instead of firing parallel refresh calls.
- */
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
@@ -47,12 +65,14 @@ api.interceptors.response.use(
     isRefreshing = true;
 
     try {
-      await api.post("/auth/refresh");
+      const refreshToken = tokenStorage.getRefresh();
+      const { data } = await api.post("/auth/refresh", refreshToken ? { refreshToken } : {});
+      tokenStorage.set(data.data.accessToken, null); // refresh token itself doesn't rotate
       resolveQueue(null);
       return api(originalRequest);
     } catch (refreshError) {
       resolveQueue(refreshError);
-      // Refresh token is also invalid/expired — force a real logout.
+      tokenStorage.clear();
       window.dispatchEvent(new CustomEvent("auth:expired"));
       return Promise.reject(refreshError);
     } finally {
