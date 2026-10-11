@@ -1,16 +1,18 @@
 import { useEffect, useState } from "react";
-import { Plus, ClipboardList, CircleDot, CheckCircle2 } from "lucide-react";
+import { Plus, ClipboardList, CircleDot, CheckCircle2, Search, Award, Phone, Droplet } from "lucide-react";
+import { format } from "date-fns";
 import toast from "react-hot-toast";
 import { DashboardLayout } from "../../components/layout/DashboardLayout";
 import { Card } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
+import { Input } from "../../components/ui/Input";
 import { Spinner } from "../../components/ui/Spinner";
 import { RequestCard } from "../../components/RequestCard";
 import { NewRequestModal } from "../../components/NewRequestModal";
 import { RequestMatchesModal } from "../../components/RequestMatchesModal";
 import { CoverageMap } from "../../components/CoverageMap";
 import { useSocket } from "../../contexts/SocketContext";
-import { getDashboard } from "../../api/hospitals";
+import { getDashboard, verifyDonorByAadhaar } from "../../api/hospitals";
 import { useAuthStore } from "../../store/authStore";
 import { SkeletonRequestCard, SkeletonStatCard } from "../../components/ui/Skeleton";
 
@@ -105,6 +107,11 @@ export default function HospitalDashboard() {
       </div>
 
       <section className="mb-8">
+        <h2 className="text-base font-semibold text-ink-900 mb-3">Verify a donor</h2>
+        <VerifyDonorCard />
+      </section>
+
+      <section className="mb-8">
         <h2 className="text-base font-semibold text-ink-900 mb-3">Coverage area</h2>
         <Card className="p-4">
           <CoverageMap coordinates={user?.location?.coordinates} label={user?.name} color="coral" />
@@ -148,6 +155,105 @@ export default function HospitalDashboard() {
         onClose={() => setViewingRequestId(null)}
       />
     </DashboardLayout>
+  );
+}
+
+function VerifyDonorCard() {
+  const [aadhaar, setAadhaar] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState(null);
+  const [notFound, setNotFound] = useState(false);
+
+  const handleSearch = async (e) => {
+    e.preventDefault();
+    const cleaned = aadhaar.replace(/\s+/g, "");
+    if (!/^\d{12}$/.test(cleaned)) {
+      toast.error("Enter a valid 12-digit Aadhaar number");
+      return;
+    }
+
+    setLoading(true);
+    setResult(null);
+    setNotFound(false);
+    try {
+      const { data } = await verifyDonorByAadhaar(cleaned);
+      setResult(data);
+    } catch (err) {
+      if (err.response?.status === 404) {
+        setNotFound(true);
+      } else {
+        toast.error(err.response?.data?.message || "Could not verify donor");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Card className="p-5">
+      <form onSubmit={handleSearch} className="flex items-end gap-3">
+        <div className="flex-1">
+          <Input
+            label="Donor Aadhaar number"
+            icon={Search}
+            placeholder="XXXX XXXX XXXX"
+            maxLength={14}
+            value={aadhaar}
+            onChange={(e) => setAadhaar(e.target.value)}
+          />
+        </div>
+        <Button type="submit" isLoading={loading} className="shrink-0">
+          Verify
+        </Button>
+      </form>
+
+      {notFound && (
+        <p className="text-sm text-ink-500 mt-4">No donor found with this Aadhaar number.</p>
+      )}
+
+      {result && (
+        <div className="mt-5 pt-5 border-t border-ink-100">
+          <div className="flex items-start justify-between flex-wrap gap-3 mb-4">
+            <div>
+              <p className="text-base font-semibold text-ink-900">{result.name}</p>
+              <div className="flex items-center gap-3 mt-1 text-sm text-ink-500">
+                <span className="flex items-center gap-1">
+                  <Droplet className="h-3.5 w-3.5 text-teal-700" /> {result.bloodType}
+                </span>
+                <span className="flex items-center gap-1">
+                  <Phone className="h-3.5 w-3.5" /> {result.phone}
+                </span>
+                {result.city && <span>{result.city}</span>}
+              </div>
+            </div>
+            {result.isPriorityDonor && (
+              <span className="flex items-center gap-1.5 text-xs font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-3 py-1.5 shrink-0">
+                <Award className="h-3.5 w-3.5" />
+                Verified Priority Donor
+              </span>
+            )}
+          </div>
+
+          {result.donationHistory?.length > 0 ? (
+            <div className="divide-y divide-ink-100 border border-ink-100 rounded-lg overflow-hidden">
+              {result.donationHistory
+                .slice()
+                .reverse()
+                .map((record, idx) => (
+                  <div key={idx} className="flex items-center justify-between px-4 py-3 text-sm">
+                    <span className="text-ink-900">{record.hospitalName}</span>
+                    <span className="text-ink-500">
+                      {format(new Date(record.date), "d MMM yyyy")} · {record.units} unit{record.units > 1 ? "s" : ""} · {record.bloodType}
+                    </span>
+                  </div>
+                ))}
+            </div>
+          ) : (
+            <p className="text-sm text-ink-500">No donation history recorded yet.</p>
+          )}
+        </div>
+      )}
+    </Card>
   );
 }
 

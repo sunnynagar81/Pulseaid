@@ -1,6 +1,7 @@
 import Hospital from "../models/Hospital.js";
 import BloodRequest from "../models/BloodRequest.js";
 import Match from "../models/Match.js";
+import Donor from "../models/Donor.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ok } from "../utils/apiResponse.js";
 import { ApiError } from "../utils/apiResponse.js";
@@ -72,4 +73,30 @@ export const changePassword = asyncHandler(async (req, res) => {
   await hospital.save();
 
   return ok(res, null, "Password changed successfully");
+});
+
+// Lets hospital staff look up a donor by Aadhaar number and see their
+// verified donation history — so a donor who has donated before can be
+// recognized and prioritized if they themselves ever need blood later.
+// Donor.findByAadhaar() hashes the input the same deterministic way it
+// was hashed at registration, so this is a lookup, never a reveal: the
+// raw Aadhaar number is never stored, and the hash itself (like the
+// password) is select:false and never comes back in this response.
+export const verifyDonorByAadhaar = asyncHandler(async (req, res) => {
+  const { aadhaarNumber } = req.body;
+
+  const donor = await Donor.findByAadhaar(aadhaarNumber);
+  if (!donor) throw new ApiError(404, "No donor found with this Aadhaar number");
+
+  return ok(res, {
+    name: donor.name,
+    bloodType: donor.bloodType,
+    city: donor.city,
+    phone: donor.phone,
+    isAadhaarVerified: donor.isAadhaarVerified,
+    isPriorityDonor: donor.isPriorityDonor,
+    priorityScore: donor.priorityScore,
+    totalDonations: donor.totalDonations,
+    donationHistory: donor.donationHistory,
+  }, "Donor verified");
 });

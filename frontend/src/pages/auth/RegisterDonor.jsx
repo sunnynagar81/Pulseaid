@@ -1,7 +1,7 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Link, useNavigate } from "react-router-dom";
-import { User, Mail, Phone, Lock, Building2 } from "lucide-react";
+import { User, Mail, Phone, Lock, Building2, IdCard } from "lucide-react";
 import toast from "react-hot-toast";
 import { AuthLayout } from "../../components/layout/AuthLayout";
 import { Input } from "../../components/ui/Input";
@@ -47,6 +47,15 @@ export default function RegisterDonor() {
         <Input label="Email" type="email" icon={Mail} placeholder="you@example.com" error={errors.email?.message} {...register("email")} />
         <Input label="Phone" icon={Phone} placeholder="9876543210" error={errors.phone?.message} {...register("phone")} />
         <Input label="Password" type="password" icon={Lock} placeholder="At least 8 characters" error={errors.password?.message} {...register("password")} />
+        <Input
+          label="Aadhaar number"
+          icon={IdCard}
+          placeholder="XXXX XXXX XXXX"
+          maxLength={14}
+          error={errors.aadhaarNumber?.message}
+          helperText="Used to verify your identity so hospitals can recognize and prioritize you as a verified donor"
+          {...register("aadhaarNumber")}
+        />
         <Input label="City" icon={Building2} placeholder="Meerut" error={errors.city?.message} {...register("city")} />
 
         <div>

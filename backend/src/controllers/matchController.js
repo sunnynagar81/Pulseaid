@@ -80,6 +80,12 @@ export const respondToMatch = asyncHandler(async (req, res) => {
 // "this genuinely happened." Only the hospital's confirmation resets
 // the donor's 90-day eligibility clock and their public donation count,
 // so the platform's impact numbers stay honest.
+//
+// It also now appends a verified donationHistory record and flips the
+// donor into "priority" status — this is the feature that lets a
+// hospital later look up this donor (by Aadhaar) and see a real,
+// hospital-confirmed donation record, so the donor can be prioritized
+// if they themselves ever need blood in future.
 export const confirmDonation = asyncHandler(async (req, res) => {
   const session = await mongoose.startSession();
   let updatedMatch, donorId, newTotalDonations;
@@ -102,9 +108,24 @@ export const confirmDonation = asyncHandler(async (req, res) => {
       match.completedAt = new Date();
       await match.save({ session });
 
+      const donationRecord = {
+        hospital: req.user._id,
+        hospitalName: req.user.name,
+        date: new Date(),
+        bloodType: bloodRequest.bloodType,
+        units: 1,
+        badge: "Verified Donor",
+      };
+
       const donor = await Donor.findByIdAndUpdate(
         match.donor,
-        { lastDonationDate: new Date(), isAvailable: true, $inc: { totalDonations: 1 } },
+        {
+          lastDonationDate: new Date(),
+          isAvailable: true,
+          $inc: { totalDonations: 1, priorityScore: 1 },
+          $push: { donationHistory: donationRecord },
+          $set: { isPriorityDonor: true },
+        },
         { new: true, session }
       );
 

@@ -7,11 +7,20 @@ const coordinates = z.tuple([
   z.number().min(-90).max(90), // lat
 ]);
 
+// Accepts "123456789012" or "1234 5678 9012" — exactly 12 digits once spaces are stripped.
+const aadhaarNumber = z
+  .string()
+  .transform((val) => val.replace(/\s+/g, ""))
+  .refine((val) => /^\d{12}$/.test(val), {
+    message: "Aadhaar number must be exactly 12 digits",
+  });
+
 export const donorRegisterSchema = z.object({
   name: z.string().min(2).max(80),
   email: z.string().email(),
   phone: z.string().min(7).max(15),
   password: z.string().min(8, "Password must be at least 8 characters"),
+  aadhaarNumber,
   bloodType: z.enum(BLOOD_TYPES),
   coordinates,
   city: z.string().optional(),
@@ -60,4 +69,9 @@ export const updateHospitalProfileSchema = z.object({
 export const changePasswordSchema = z.object({
   currentPassword: z.string().min(1, "Current password is required"),
   newPassword: z.string().min(8, "New password must be at least 8 characters"),
+});
+
+// Used by the hospital-side "Verify Donor by Aadhaar" lookup (Step 4).
+export const aadhaarLookupSchema = z.object({
+  aadhaarNumber,
 });

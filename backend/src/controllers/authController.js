@@ -19,16 +19,23 @@ function toGeoPoint(coordinates) {
 }
 
 export const registerDonor = asyncHandler(async (req, res) => {
-  const { name, email, phone, password, bloodType, coordinates, city } = req.body;
+  const { name, email, phone, password, aadhaarNumber, bloodType, coordinates, city } = req.body;
 
   const existing = await Donor.findOne({ email });
   if (existing) throw new ApiError(409, "An account with this email already exists");
+
+  const existingAadhaar = await Donor.findByAadhaar(aadhaarNumber);
+  if (existingAadhaar) throw new ApiError(409, "An account with this Aadhaar number already exists");
+
+  const aadhaarHash = Donor.hashAadhaar(aadhaarNumber);
 
   const donor = await Donor.create({
     name,
     email,
     phone,
     password,
+    aadhaarHash,
+    isAadhaarVerified: true,
     bloodType,
     city,
     location: toGeoPoint(coordinates),
@@ -129,5 +136,6 @@ function sanitize(userDoc) {
   const obj = userDoc.toObject ? userDoc.toObject() : userDoc;
   delete obj.password;
   delete obj.tokenVersion;
+  delete obj.aadhaarHash;
   return obj;
 }

@@ -13,6 +13,12 @@ export const donorRegisterSchema = z.object({
   email: z.string().email("Enter a valid email"),
   phone: z.string().min(7, "Enter a valid phone number"),
   password: z.string().min(8, "Password must be at least 8 characters"),
+  aadhaarNumber: z
+    .string()
+    .transform((val) => val.replace(/\s+/g, ""))
+    .refine((val) => /^\d{12}$/.test(val), {
+      message: "Enter a valid 12-digit Aadhaar number",
+    }),
   bloodType: z.enum(BLOOD_TYPES, { message: "Select a blood type" }),
   city: z.string().optional(),
 });

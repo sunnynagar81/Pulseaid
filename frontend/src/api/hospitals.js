@@ -5,3 +5,6 @@ export const getDashboard = () => api.get("/hospitals/me/dashboard").then((r) =>
 export const updateProfile = (payload) => api.patch("/hospitals/me", payload).then((r) => r.data);
 
 export const changePassword = (payload) => api.patch("/hospitals/me/password", payload).then((r) => r.data);
+
+export const verifyDonorByAadhaar = (aadhaarNumber) =>
+  api.post("/hospitals/verify-donor", { aadhaarNumber }).then((r) => r.data);

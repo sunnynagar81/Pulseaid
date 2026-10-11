@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { CheckCircle2, Clock3, Droplet, Bell } from "lucide-react";
+import { CheckCircle2, Clock3, Droplet, Bell, Award, Hospital as HospitalIcon } from "lucide-react";
 import { format } from "date-fns";
 import toast from "react-hot-toast";
 import { DashboardLayout } from "../../components/layout/DashboardLayout";
@@ -96,10 +96,11 @@ export default function DonorDashboard() {
 
   const activeAlerts = matches?.filter((m) => m.status === "notified") || [];
   const pastAlerts = matches?.filter((m) => m.status !== "notified") || [];
+  const donationHistory = user?.donationHistory || [];
 
   return (
     <DashboardLayout title="Dashboard">
-      <div className="grid md:grid-cols-3 gap-5 mb-8">
+      <div className="grid md:grid-cols-4 gap-5 mb-8">
         <EligibilityCard eligibility={eligibility} />
 
         <Card className="p-5 flex flex-col justify-between">
@@ -122,6 +123,8 @@ export default function DonorDashboard() {
             <span className="text-2xl font-display font-semibold text-ink-900">{user?.bloodType}</span>
           </div>
         </Card>
+
+        <PriorityBadgeCard user={user} />
       </div>
 
       <section className="mb-8">
@@ -163,13 +166,40 @@ export default function DonorDashboard() {
       </section>
 
       {pastAlerts.length > 0 && (
-        <section>
+        <section className="mb-8">
           <h2 className="text-base font-semibold text-ink-900 mb-3">Past alerts</h2>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {pastAlerts.map((m) => (
               <MatchCard key={m._id} match={m} />
             ))}
           </div>
+        </section>
+      )}
+
+      {donationHistory.length > 0 && (
+        <section>
+          <h2 className="text-base font-semibold text-ink-900 mb-3">Donation history</h2>
+          <Card className="p-0 overflow-hidden divide-y divide-ink-100">
+            {donationHistory
+              .slice()
+              .reverse()
+              .map((record, idx) => (
+                <div key={idx} className="flex items-center gap-3 px-5 py-4">
+                  <div className="h-9 w-9 rounded-lg bg-teal-100 text-teal-700 flex items-center justify-center shrink-0">
+                    <HospitalIcon className="h-4.5 w-4.5" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-ink-900 truncate">{record.hospitalName}</p>
+                    <p className="text-xs text-ink-500">
+                      {format(new Date(record.date), "d MMM yyyy")} · {record.units} unit{record.units > 1 ? "s" : ""} · {record.bloodType}
+                    </p>
+                  </div>
+                  <span className="text-xs font-medium text-teal-700 bg-teal-50 border border-teal-200 rounded-full px-2.5 py-1 shrink-0">
+                    {record.badge}
+                  </span>
+                </div>
+              ))}
+          </Card>
         </section>
       )}
 
@@ -215,6 +245,27 @@ function EligibilityCard({ eligibility }) {
           Last donated {format(new Date(eligibility.lastDonationDate), "d MMM yyyy")}
         </p>
       )}
+    </Card>
+  );
+}
+
+function PriorityBadgeCard({ user }) {
+  const isPriority = user?.isPriorityDonor;
+
+  return (
+    <Card className={isPriority ? "p-5 bg-amber-50 border-amber-200" : "p-5"}>
+      <p className="text-sm font-medium text-ink-500 mb-1">Donor status</p>
+      <div className="flex items-center gap-2 mt-1">
+        <Award className={isPriority ? "h-6 w-6 text-amber-600" : "h-6 w-6 text-ink-300"} />
+        <span className="text-lg font-semibold text-ink-900">
+          {isPriority ? "Verified Donor" : "Not yet verified"}
+        </span>
+      </div>
+      <p className="text-xs text-ink-500 mt-2">
+        {isPriority
+          ? "You get priority if you ever need blood in future."
+          : "Donate once at a hospital to become a verified priority donor."}
+      </p>
     </Card>
   );
 }
