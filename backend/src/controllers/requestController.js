@@ -65,7 +65,7 @@ export const getRequestMatches = asyncHandler(async (req, res) => {
   }
 
   const matches = await Match.find({ request: bloodRequest._id })
-    .populate("donor", "name phone bloodType");
+    .populate("donor", "name phone bloodType isPriorityDonor priorityScore");
 
   return ok(res, matches);
 });

@@ -12,10 +12,11 @@ import { CoverageMap } from "../../components/CoverageMap";
 import { ImpactModal } from "../../components/ImpactModal";
 import { useAuthStore } from "../../store/authStore";
 import { useSocket } from "../../contexts/SocketContext";
+import { getMe } from "../../api/auth";
 import { getEligibility, updateAvailability, getMyMatches } from "../../api/donors";
 
 export default function DonorDashboard() {
-  const { user } = useAuthStore();
+  const { user, updateUser } = useAuthStore();
   const { socket } = useSocket();
 
   const [eligibility, setEligibility] = useState(null);
@@ -74,11 +75,22 @@ export default function DonorDashboard() {
       setMatches((prev) =>
         (prev || []).map((m) => (m._id === payload.matchId ? { ...m, status: "completed" } : m))
       );
+
+      // The hospital's confirmation just changed several things on the
+      // server (badge, donation history, last-donated date, availability).
+      // Re-fetch so the dashboard reflects them without a page reload.
+      getMe()
+        .then(({ data }) => {
+          updateUser(data);
+          setAvailable(data.isAvailable ?? true);
+        })
+        .catch(() => {});
+      getEligibility().then(({ data }) => setEligibility(data)).catch(() => {});
     };
 
     socket.on("donation-confirmed", handleDonationConfirmed);
     return () => socket.off("donation-confirmed", handleDonationConfirmed);
-  }, [socket]);
+  }, [socket, updateUser]);
 
   const handleToggleAvailability = async (next) => {
     setTogglingAvailability(true);

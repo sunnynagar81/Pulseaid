@@ -75,10 +75,11 @@ export default function HospitalDashboard() {
     };
   }, [socket]);
 
-    if (!data) {
+  if (!data) {
     return (
       <DashboardLayout title="Dashboard">
-        <div className="grid grid-cols-3 gap-4 max-w-xl mb-8">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-2xl mb-8">
+          <SkeletonStatCard />
           <SkeletonStatCard />
           <SkeletonStatCard />
           <SkeletonStatCard />
@@ -94,11 +95,12 @@ export default function HospitalDashboard() {
 
   return (
     <DashboardLayout title="Dashboard">
-      <div className="flex items-center justify-between mb-6">
-        <div className="grid grid-cols-3 gap-4 flex-1 max-w-xl">
+      <div className="flex items-center justify-between gap-4 mb-6">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 flex-1 max-w-2xl">
           <SummaryStat icon={ClipboardList} label="Total requests" value={data.summary.totalRequests} />
           <SummaryStat icon={CircleDot} label="Open" value={data.summary.openRequests} tone="text-coral-500" />
           <SummaryStat icon={CheckCircle2} label="Fulfilled" value={data.summary.fulfilledRequests} tone="text-teal-700" />
+          <SummaryStat icon={Award} label="Verified donors" value={data.summary.verifiedDonors ?? 0} tone="text-amber-600" />
         </div>
         <Button onClick={() => setModalOpen(true)} className="shrink-0">
           <Plus className="h-4 w-4" />

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Hospital, MapPin, Clock, Check, X, Award } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import toast from "react-hot-toast";
@@ -8,13 +8,18 @@ import { Button } from "./ui/Button";
 import { respondToMatch } from "../api/matches";
 import { motion } from "framer-motion";
 
-
 const URGENCY_VARIANT = { critical: "red", urgent: "coral", scheduled: "gray" };
 const STATUS_LABEL = { accepted: "You accepted", declined: "Declined", completed: "Donation confirmed" };
 
 export function MatchCard({ match, onResponded }) {
   const [status, setStatus] = useState(match.status);
   const [responding, setResponding] = useState(null);
+
+  // Keep local status in sync when the parent updates the match live
+  // (e.g. the hospital confirms the donation over the socket).
+  useEffect(() => {
+    setStatus(match.status);
+  }, [match.status]);
 
   const request = match.request;
   const hospitalName = request?.hospital?.name || "Hospital";
@@ -35,83 +40,67 @@ export function MatchCard({ match, onResponded }) {
   };
 
   return (
-        <motion.div
+    <motion.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25 }}
     >
-        <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.25 }}
-    >
-    <Card className="p-5" hoverable>
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex items-start gap-3 min-w-0">
-          <div className="h-10 w-10 rounded-lg bg-navy-700/10 text-navy-700 flex items-center justify-center shrink-0">
-            <Hospital className="h-5 w-5" />
+      <Card className="p-5" hoverable>
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex items-start gap-3 min-w-0">
+            <div className="h-10 w-10 rounded-lg bg-navy-700/10 text-navy-700 flex items-center justify-center shrink-0">
+              <Hospital className="h-5 w-5" />
+            </div>
+            <div className="min-w-0">
+              <p className="font-medium text-ink-900 truncate">{hospitalName}</p>
+              {hospitalCity && (
+                <p className="text-xs text-ink-500 flex items-center gap-1.5">
+                  <MapPin className="h-3.5 w-3.5" />
+                  {hospitalCity}
+                </p>
+              )}
+            </div>
           </div>
-          <div className="min-w-0">
-            <p className="font-medium text-ink-900 truncate">{hospitalName}</p>
-            {hospitalCity && (
-              <p className="text-xs text-ink-500 flex items-center gap-1 mt-0.5">
-                <MapPin className="h-3 w-3" />
-                {hospitalCity}
-                {typeof match.distanceKm === "number" && ` · ${match.distanceKm} km away`}
-              </p>
+          <div className="flex items-center gap-2">
+            <Badge variant={URGENCY_VARIANT[request.urgency]} className="uppercase text-xs font-medium">
+              {request.urgency}
+            </Badge>
+            <Badge variant="gray" className="uppercase text-xs font-medium">
+              {request.bloodType}
+            </Badge>
+          </div>
+        </div>
+        <div className="flex items-center justify-between gap-4 mt-3">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1.5 text-xs text-ink-500">
+              <Clock className="h-3.5 w-3.5" />
+              {formatDistanceToNow(new Date(request.timestamp), { addSuffix: true })}
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            {status === "pending" && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleRespond("declined")}
+                disabled={responding === "declined"}
+              >
+                {responding === "declined" ? <X className="h-4 w-4" /> : "Decline"}
+              </Button>
+            )}
+            {status === "pending" && (
+              <Button
+                variant="default"
+                size="sm"
+                onClick={() => handleRespond("accepted")}
+                disabled={responding === "accepted"}
+              >
+                {responding === "accepted" ? <Check className="h-4 w-4" /> : "Accept"}
+              </Button>
             )}
           </div>
         </div>
-        <Badge variant={URGENCY_VARIANT[request?.urgency] || "gray"}>{request?.urgency}</Badge>
-      </div>
-
-      <div className="flex items-center gap-4 mt-4 text-sm">
-        <span className="font-semibold text-teal-700">{request?.bloodType}</span>
-        <span className="text-ink-400">·</span>
-        <span className="text-ink-600">{request?.unitsNeeded} unit(s) needed</span>
-      </div>
-
-      {match.createdAt && (
-        <p className="text-xs text-ink-400 flex items-center gap-1 mt-2">
-          <Clock className="h-3 w-3" />
-          {formatDistanceToNow(new Date(match.createdAt), { addSuffix: true })}
-        </p>
-      )}
-
-      {status === "notified" ? (
-        <div className="flex gap-2 mt-4">
-          <Button
-            size="sm"
-            className="flex-1"
-            isLoading={responding === "accepted"}
-            disabled={responding !== null}
-            onClick={() => handleRespond("accepted")}
-          >
-            <Check className="h-4 w-4" />
-            Accept
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            className="flex-1"
-            isLoading={responding === "declined"}
-            disabled={responding !== null}
-            onClick={() => handleRespond("declined")}
-          >
-            <X className="h-4 w-4" />
-            Decline
-          </Button>
-        </div>
-      ) : (
-        <div className="mt-4">
-          <Badge variant={status === "completed" ? "teal" : status === "accepted" ? "coral" : "gray"}>
-            {status === "completed" && <Award className="h-3 w-3 inline mr-1" />}
-            {STATUS_LABEL[status] || status}
-          </Badge>
-        </div>
-      )}
-        </Card>
-       </motion.div>
-     </motion.div>
+      </Card>
+    </motion.div>
   );
 }

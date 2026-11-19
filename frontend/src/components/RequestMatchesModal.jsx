@@ -64,7 +64,18 @@ export function RequestMatchesModal({ open, onClose, requestId }) {
                   {m.donor?.name?.[0]?.toUpperCase() || "?"}
                 </div>
                 <div className="min-w-0">
-                  <p className="text-sm font-medium text-ink-900 truncate">{m.donor?.name}</p>
+                  <p className="text-sm font-medium text-ink-900 truncate flex items-center gap-1.5">
+                    {m.donor?.name}
+                    {m.donor?.isPriorityDonor && (
+                      <span
+                        title="Verified priority donor — has a hospital-confirmed donation history"
+                        className="flex items-center gap-0.5 text-[10px] font-semibold text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-1.5 py-0.5 shrink-0"
+                      >
+                        <Award className="h-2.5 w-2.5" />
+                        Priority
+                      </span>
+                    )}
+                  </p>
                   <p className="text-xs text-ink-500 flex items-center gap-2 mt-0.5">
                     <span className="flex items-center gap-1"><Droplet className="h-3 w-3" />{m.donor?.bloodType}</span>
                     {m.donor?.phone && (

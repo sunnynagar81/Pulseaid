@@ -6,13 +6,21 @@ import { findNearestDonorIds } from "./graphProximity.js";
 const DEFAULT_RADIUS_KM = 500;
 const MAX_DONORS_PER_REQUEST = 25;
 
+// Donors within this many km of each other are treated as "equally near"
+// for ranking purposes. Within a band, a verified priority donor is moved
+// ahead of a non-priority donor — but a priority donor several bands
+// further away never jumps ahead of someone genuinely closer. Distance
+// stays the dominant factor; priority only breaks ties.
+const PRIORITY_DISTANCE_BAND_KM = 2;
+
 /**
  * Runs the four-stage filter described in the project deck:
  *   1. Blood compatibility  2. 90-day eligibility
  *   3. Proximity (graph if available, else Mongo geo)  4. Final ranking
  *
  * Returns the list of Donor documents chosen for this request, in the
- * order they should be alerted (closest / soonest-available first).
+ * order they should be alerted (closest / soonest-available first, with
+ * verified priority donors ranked ahead of others at comparable distance).
  */
 export async function findMatchingDonors(bloodRequest) {
   const compatibleTypes = getCompatibleDonorTypes(bloodRequest.bloodType);
@@ -62,21 +70,41 @@ export async function findMatchingDonors(bloodRequest) {
   // and keeps the geo query itself simple.
   const eligible = candidateDonors.filter(({ donor }) => donor.isEligible());
 
-  console.log("[match-debug]", {
-  requestBloodType: bloodRequest.bloodType,
-  compatibleTypes,
-  hospitalCoords: [lng, lat],
-  candidatesFound: candidateDonors.length,
-  candidateDonors: candidateDonors.map((c) => ({
-    id: c.donor._id.toString(),
-    bloodType: c.donor.bloodType,
-    coords: c.donor.location.coordinates,
-    distanceKm: c.distanceKm,
-    isAvailable: c.donor.isAvailable,
-  })),
-});
+  // Final ranking: nearest-first stays dominant, but within the same
+  // distance band a verified priority donor (hospital-confirmed donation
+  // history) is bumped ahead of a non-priority donor at that same band.
+  const ranked = rankByPriority(eligible);
 
-  return eligible; // [{ donor, distanceKm }], already nearest-first
+  console.log("[match-debug]", {
+    requestBloodType: bloodRequest.bloodType,
+    compatibleTypes,
+    hospitalCoords: [lng, lat],
+    candidatesFound: candidateDonors.length,
+    candidateDonors: ranked.map((c) => ({
+      id: c.donor._id.toString(),
+      bloodType: c.donor.bloodType,
+      coords: c.donor.location.coordinates,
+      distanceKm: c.distanceKm,
+      isAvailable: c.donor.isAvailable,
+      isPriorityDonor: c.donor.isPriorityDonor,
+    })),
+  });
+
+  return ranked; // [{ donor, distanceKm }], nearest-first with priority tie-break
+}
+
+function rankByPriority(candidates) {
+  return candidates.slice().sort((a, b) => {
+    const bandA = Math.floor(a.distanceKm / PRIORITY_DISTANCE_BAND_KM);
+    const bandB = Math.floor(b.distanceKm / PRIORITY_DISTANCE_BAND_KM);
+    if (bandA !== bandB) return bandA - bandB;
+
+    const priorityA = a.donor.isPriorityDonor ? 1 : 0;
+    const priorityB = b.donor.isPriorityDonor ? 1 : 0;
+    if (priorityA !== priorityB) return priorityB - priorityA;
+
+    return a.distanceKm - b.distanceKm;
+  });
 }
 
 /**

@@ -42,10 +42,14 @@ export const getDashboard = asyncHandler(async (req, res) => {
     };
   });
 
+  // Donors who have at least one hospital-confirmed donation on record.
+  const verifiedDonors = await Donor.countDocuments({ isPriorityDonor: true });
+
   const summary = {
     totalRequests: requests.length,
     openRequests: requests.filter((r) => r.status === "open").length,
     fulfilledRequests: requests.filter((r) => r.status === "fulfilled").length,
+    verifiedDonors,
   };
 
   return ok(res, { requests: enriched, summary });

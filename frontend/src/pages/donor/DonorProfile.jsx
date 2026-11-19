@@ -1,7 +1,7 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import toast from "react-hot-toast";
-import { User, Phone, Building2, Mail, Droplet, Award } from "lucide-react";
+import { User, Phone, Building2, Mail, Droplet, Award, ShieldCheck } from "lucide-react";
 import { DashboardLayout } from "../../components/layout/DashboardLayout";
 import { Card } from "../../components/ui/Card";
 import { Input } from "../../components/ui/Input";
@@ -41,9 +41,17 @@ export default function DonorProfile() {
             <div className="h-14 w-14 rounded-full bg-navy-700 text-white flex items-center justify-center text-xl font-semibold shrink-0">
               {user?.name?.[0]?.toUpperCase() || "?"}
             </div>
-            <div>
-              <h2 className="text-lg font-semibold text-ink-900">{user?.name}</h2>
-              <p className="text-sm text-ink-500">Donor</p>
+            <div className="min-w-0">
+              <h2 className="text-lg font-semibold text-ink-900 truncate">{user?.name}</h2>
+              <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                <p className="text-sm text-ink-500">Donor</p>
+                {user?.isPriorityDonor && (
+                  <span className="flex items-center gap-1 text-xs font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-2.5 py-0.5">
+                    <Award className="h-3 w-3" />
+                    Verified Donor
+                  </span>
+                )}
+              </div>
             </div>
           </div>
 
@@ -55,8 +63,13 @@ export default function DonorProfile() {
             <div className="grid grid-cols-2 gap-4 pt-2 border-t border-ink-100">
               <ReadOnlyField icon={Mail} label="Email" value={user?.email} />
               <ReadOnlyField icon={Droplet} label="Blood type" value={user?.bloodType} />
+              <ReadOnlyField icon={Award} label="Total donations" value={user?.totalDonations ?? 0} />
+              <ReadOnlyField
+                icon={ShieldCheck}
+                label="Identity"
+                value={user?.isAadhaarVerified ? "Aadhaar verified" : "Not verified"}
+              />
             </div>
-            <ReadOnlyField icon={Award} label="Total donations" value={user?.totalDonations ?? 0} />
 
             <Button type="submit" isLoading={isSubmitting} disabled={!isDirty}>
               Save Changes
